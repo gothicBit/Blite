@@ -1,24 +1,129 @@
 <!DOCTYPE html>
 <html>
 <body>
-<canvas id="glCanvas" width=640 height=480></canvas>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.0.0/p5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/bmoren/p5.collide2D@0.6/p5.collide2d.js"></script>
+<script src="player.js"></script>
+<script src="game.js"></script>
 <script>
 
-function main()
-{
-    const canvas = document.querySelector("#glCanvas");
-    const gl = canvas.getContext("webgl");
-    if(gl == null){
-        alert("Unable to initialize WebGL.");
-        return;
-    }
-
-    gl.clearColor(1,0,0,1);
-    gl.clear(gl.COLOR_BUFFER_BIT);
-
+function setup(){
+    createCanvas(640,480);
+    frameRate(60);
+    Players.push(new Player(width/2,height/1.5,10,10));
+}
+let floorHeight = 80;
+let fontReg;
+function preload() {
+  fontReg = loadFont('./assets/DejaVuSans.ttf');
+}
+function draw(){
+    if(gameState == 0)//menu
+	{
+		clear();
+		background(0,0,0,0);
+		stroke(0,0,0);
+		noFill();
+		strokeWeight(3);
+		square(0,0,width,height);
+		strokeWeight(1);
+		fill(0);
+		textSize(32);
+		textAlign(CENTER);
+		text('Blite', width/2, height/2.5);
+		noFill();
+		textSize(24);
+		textFont(fontReg);
+		
+		for(var i = 0; i < MAX_OPTIONS; i++){
+			if(menuOption == i){
+				var bounds = fontReg.textBounds(menu_options[i], width/2, height/(2 - (i * 0.25)), 24);
+				stroke(255,0,0);
+				rect(bounds.x-2, bounds.y-2, bounds.w+4, bounds.h+4);
+				stroke(0,0,0);
+			}
+			text(menu_options[i], width/2, height/(2 - (i * 0.25)));
+		}
+		
+		for(var i = 0; i < Players.length; i++){
+			var player = Players[i];
+			player.monitorInput();
+		}
+	}
+	else if(gameState != 0)//InGame/Paused
+	{
+		clear();
+		if(Players[0].state == 0)
+			background(0,0,0,0);
+		else if(Players[0].state == 1)
+			background(color(0,0,0));
+		
+		
+		if(Players[0].state == 0){
+			fill(0);
+			stroke(0,0,0);
+		}
+		else if(Players[0].state == 1){
+			fill(255);
+			stroke(255,255,255);
+		}
+		
+		square(0,height - floorHeight,width,height);//draw floor
+		
+		stroke(0,0,0);
+		noFill();
+		strokeWeight(3);
+		square(0,0,width,height);
+		strokeWeight(1);
+		
+		if(gameState == 1){//InGame
+			for(var i = 0; i < Players.length; i++){
+				var player = Players[i];
+				player.monitorInput();
+				player.applyGravity(floorHeight);
+				fill(255, 0, 0);
+				stroke(255,0,0);
+				square(player.x, player.y, player.w, player.h);
+			}
+			runGame();
+		}
+		else if(gameState == 2 || gameState == 3){//Paused
+			textSize(32);
+			textAlign(CENTER);
+			
+			if(Players[0].state == 0){
+				stroke(0,0,0);
+			}
+			else if(Players[0].state == 1){
+				stroke(255,255,255);
+			}
+			
+			if(gameState == 2)
+				text('Paused', width/2, height/2.5);
+			else{
+				text('Game Over', width/2, height/2.5);
+				textSize(24);
+				text('Press Any Key To Continue', width/2, height/2);
+			}
+			textSize(24);
+			textAlign(LEFT);
+			stroke(255,0,0);
+			fill(255,0,0);
+			text("Score: " + window.savedScore/1000, 0, 20);
+			
+			for(var i = 0; i < Players.length; i++){
+				var player = Players[i];
+				fill(255, 0, 0);
+				stroke(255,0,0);
+				square(player.x, player.y, player.w, player.h);
+			}
+			
+			renderObjects(false);
+			
+		}
+	}
 }
 
-window.onload = main;
 </script>
 </body>
 </html>
